@@ -649,7 +649,7 @@ $('remYes').onclick = () => {
 $('remNo').onclick = () => bye(false);
 
 /* family area: press and hold the logo for 2 seconds (so she can't open it by accident) */
-let holdT; $('logo').addEventListener('pointerdown', () => { holdT = setTimeout(() => location.href = 'index.html', 2000); });
+let holdT; $('logo').addEventListener('pointerdown', () => { holdT = setTimeout(() => location.href = 'setup.html', 2000); });
 ['pointerup', 'pointerleave'].forEach(t => $('logo').addEventListener(t, () => clearTimeout(holdT)));
 
 window.__rosie = {FingerWalk, FistStretch, LOG, get current(){ return current; }, reward, checkin};
