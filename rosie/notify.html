@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maya's phone</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* the family side: Maya's phone. Open next to app.html on the same Mac; her reply lands on Mom's iPad. */
+  :root{--sand:#f6ede6;--sand2:#efe2d8;--plum:#2b1f2a;--plum2:#6b5a66;--pink:#d62f86;--sage:#5f9a6a}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{background:#dcd6cc;font-family:Nunito,ui-rounded,system-ui,sans-serif;color:var(--plum);display:grid;place-items:center;overflow:hidden}
+  button{font:inherit;color:inherit;border:0;cursor:pointer}
+  .phone{width:390px;height:820px;border-radius:58px;padding:14px;background:#151318;box-shadow:0 30px 80px rgba(0,0,0,.3);position:relative}
+  .scr{position:relative;width:100%;height:100%;border-radius:46px;overflow:hidden;background:linear-gradient(170deg,#f3c7d9 0%,#f6ede6 55%,#efe2d8 100%)}
+  .island{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:118px;height:34px;border-radius:20px;background:#000;z-index:5}
+  .lock{position:absolute;inset:0;text-align:center;padding-top:96px;transition:opacity .4s}
+  .date{font-size:20px;font-weight:800;color:var(--plum2)}
+  .time{font-size:92px;font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--plum)}
+  .note{position:absolute;left:12px;right:12px;top:300px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:26px;padding:14px 16px;text-align:left;
+    box-shadow:0 10px 30px rgba(43,31,42,.15);transform:translateY(-30px);opacity:0;transition:transform .6s cubic-bezier(.3,1.4,.5,1),opacity .4s}
+  .note.on{transform:none;opacity:1}
+  .nh{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--plum2)}
+  .nh i{width:24px;height:24px;border-radius:7px;background:var(--pink);display:grid;place-items:center;color:#fff;font-style:normal;font-size:13px}
+  .nh small{margin-left:auto;font-weight:700}
+  .note b{display:block;font-size:17px;margin:6px 0 2px}
+  .note p{font-size:15px;font-weight:700;line-height:1.35;color:var(--plum)}
+  .hint{position:absolute;bottom:40px;left:0;right:0;text-align:center;font-size:14px;font-weight:800;color:var(--plum2)}
+  /* reply view */
+  .app{position:absolute;inset:0;background:var(--sand);padding:62px 18px 18px;display:flex;flex-direction:column;gap:12px;transform:translateY(100%);transition:transform .5s cubic-bezier(.3,1,.4,1)}
+  .app.on{transform:none}
+  .bar{display:flex;align-items:center;gap:10px}
+  .bar .logo{font-size:26px;font-weight:900;color:var(--pink)}
+  .bar small{margin-left:auto;font-size:14px;font-weight:800;color:var(--plum2)}
+  .card{background:#fff;border-radius:22px;padding:14px 16px;box-shadow:0 4px 14px rgba(43,31,42,.08)}
+  .card h2{font-size:21px;font-weight:900}
+  .card ul{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}
+  .card li{font-size:16px;font-weight:800}
+  .lbl{font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--plum2);margin-top:4px}
+  .quick{display:grid;gap:8px}
+  .quick button{text-align:left;background:#fff;border-radius:18px;padding:13px 14px;font-size:16px;font-weight:800;border:2px solid transparent}
+  .quick button[aria-pressed="true"]{border-color:var(--pink);background:#fde8f2}
+  textarea{width:100%;height:74px;border-radius:18px;border:2px solid var(--sand2);padding:12px;font:inherit;font-size:16px;font-weight:700;resize:none;background:#fff}
+  .send{margin-top:auto;height:58px;border-radius:999px;background:var(--pink);color:#fff;font-size:20px;font-weight:900}
+  .sent{position:absolute;inset:0;background:var(--sand);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:30px}
+  .sent.on{display:flex}
+  .sent .big{width:84px;height:84px;border-radius:50%;background:var(--sage);color:#fff;display:grid;place-items:center;font-size:42px;font-weight:900}
+  .sent h2{font-size:26px;font-weight:900}.sent p{font-size:17px;font-weight:700;color:var(--plum2);line-height:1.4}
+</style>
+</head>
+<body>
+<div class="phone"><div class="scr">
+  <div class="island"></div>
+  <div class="lock" id="lock">
+    <div class="date" id="date"></div><div class="time" id="time"></div>
+    <button class="note" id="note"><div class="nh"><i>🌼</i>ROSIE<small>now</small></div><b id="nTitle">Mom finished her hand moves</b><p id="nBody"></p></button>
+    <div class="hint" id="hint">Waiting for Mom's session…</div>
+  </div>
+  <div class="app" id="app">
+    <div class="bar"><span class="logo">Rosie</span><small id="aWhen">Today</small></div>
+    <div class="card"><h2 id="aTitle">Mom's hand moves</h2><ul id="aList"></ul></div>
+    <div class="lbl">Send Mom a note</div>
+    <div class="quick" id="quick"></div>
+    <textarea id="txt" aria-label="Your message"></textarea>
+    <button class="send" id="send">Send to Mom's Rosie</button>
+    <div class="sent" id="sent"><div class="big">✓</div><h2>Sent!</h2><p>Rosie will read it to Mom right away, and show it on her screen.</p></div>
+  </div>
+</div></div>
+<script>
+const $ = id => document.getElementById(id);
+const tick = () => { const d = new Date(); $('time').textContent = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}).replace(/\s?[AP]M/i, '');
+  $('date').textContent = d.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}); };
+tick(); setInterval(tick, 10000);
+const QUICK = ["So proud of you, Mom ❤️ I'll bring your lemon cake on Sunday.", "Well done! Rest that ring finger today. Call you tonight 📞", "You're amazing, Mom. The kids say hi! 🌼"];
+let share = null, seen = '';
+function body(s){
+  const sore = s.spots && s.spots.length ? `${s.spots.slice(0, 2).join(', ')} ${s.spots.length > 2 ? 'and more ' : ''}a bit sore` : 'no sore spots';
+  return `${s.moves} moves done · ${sore}${s.gentle ? ', so she took it gently' : ''}.`;
+}
+function check(){
+  let s = null; try { s = JSON.parse(localStorage.getItem('rosie-share') || 'null'); } catch(e){}
+  if (!s || s.at === seen) return; seen = s.at; share = s;
+  $('nTitle').textContent = `${s.name === 'Margaret' ? 'Mom' : s.name} finished her hand moves`; $('nBody').textContent = body(s);
+  $('note').classList.add('on'); $('hint').textContent = 'Tap the notification';
+  try { const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(.06, a.currentTime); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + .6); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + .6); } catch(e){}
+}
+check(); setInterval(check, 800);
+addEventListener('storage', e => { if (e.key === 'rosie-share') check(); });
+// for filming without the iPad: tap the lock screen once to show a sample notification
+$('lock').addEventListener('click', e => { if (share || e.target.closest('#note')) return; share = {name:'Margaret', moves:2, spots:['Ring finger, middle knuckle'], gentle:true, at:'demo'}; seen = 'demo';
+  $('nTitle').textContent = 'Mom finished her hand moves'; $('nBody').textContent = body(share); $('note').classList.add('on'); $('hint').textContent = 'Tap the notification'; });
+$('note').onclick = () => {
+  if (!share) return;
+  $('aList').innerHTML = [`✅ ${share.moves} hand moves done`, share.spots && share.spots.length ? `🌼 ${share.spots.join(', ')} a bit sore` : '🌼 No sore spots today',
+    share.gentle ? '🌸 She took it gently' : '💪 Full moves today'].map(l => `<li>${l}</li>`).join('');
+  $('quick').innerHTML = QUICK.map((q, i) => `<button data-i="${i}" aria-pressed="${i === 0}">${q}</button>`).join(''); $('txt').value = QUICK[0];
+  $('app').classList.add('on');
+};
+$('quick').onclick = e => { const b = e.target.closest('button'); if (!b) return; [...$('quick').children].forEach(x => x.setAttribute('aria-pressed', x === b)); $('txt').value = QUICK[+b.dataset.i]; };
+$('send').onclick = () => {
+  const msg = $('txt').value.trim() || QUICK[0];
+  try { localStorage.setItem('rosie-reply', JSON.stringify({msg, at: new Date().toISOString()})); } catch(e){}
+  $('sent').classList.add('on');
+};
+</script>
+</body>
+</html>

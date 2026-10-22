@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="voice.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rosie</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* Warm & grown-up: sand ground, plum ink, Rosie's pink is the one bright thing. Same layout on every step. */
+  :root{--sand:#f6ede6;--sand2:#efe2d8;--card:#fff;--plum:#2b1f2a;--plum2:#6b5a66;--pink:#d62f86;--pinkDeep:#b4235f;--pinkSoft:#f4a7c9;--sage:#5f9a6a;--sun:#ffd43b;
+    --soft:0 1px 2px rgba(60,30,40,.06),0 8px 22px rgba(60,30,40,.10)}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{background:#dcd6cc;color:var(--plum);overflow:hidden;font-family:Nunito,ui-rounded,system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit;cursor:pointer;border:0}
+  button:focus-visible{outline:4px solid var(--pink);outline-offset:3px}
+  #device{position:absolute;left:50%;top:50%;width:1216px;height:856px;padding:18px;border-radius:52px;background:linear-gradient(145deg,#2a2830,#111015);box-shadow:0 0 0 1.5px #3a3840,0 40px 90px rgba(0,0,0,.28)}
+  #screen{position:relative;width:1180px;height:820px;border-radius:34px;overflow:hidden;background:var(--sand)}
+  body.real{background:var(--sand)}
+  body.real #device{left:0;top:0;width:100vw;height:100vh;padding:0;border-radius:0;background:none;box-shadow:none;transform:none!important}
+  body.real #screen{width:100%;height:100%;border-radius:0}
+
+  /* top bar: logo (hold for family), where she is, Say it again */
+  .top{position:absolute;left:36px;right:36px;top:26px;height:68px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;z-index:5}
+  #logo{justify-self:start;background:none;padding:0;line-height:0}
+  #logo img{height:50px;width:auto;display:block;pointer-events:none;-webkit-user-drag:none}
+  #where{text-align:center;font-size:24px;font-weight:900}
+  #where small{display:block;font-size:15px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--plum2)}
+  .pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:68px;padding:0 28px;border-radius:999px;font-size:23px;font-weight:800}
+  #again{justify-self:end;background:var(--plum);color:#fff}
+  #again svg{width:26px;height:26px}
+
+  /* Rosie + what she said (always on screen: captions are never off) */
+  .bubble{position:absolute;left:40px;top:122px;width:340px;background:var(--card);border-radius:30px;padding:22px 24px;box-shadow:var(--soft);z-index:4;transition:transform .25s}
+  .bubble::after{content:"";position:absolute;left:60px;bottom:-22px;width:36px;height:26px;background:var(--card);clip-path:polygon(0 0,100% 0,18% 100%)}
+  #say1{font-size:31px;font-weight:900;line-height:1.14;letter-spacing:-.01em}
+  #say2{font-size:20px;font-weight:700;line-height:1.4;color:var(--plum2);margin-top:8px}
+  #say2:empty{display:none}
+  .bubble.new{animation:nudge .45s ease}
+  @keyframes nudge{40%{transform:scale(1.03)}}
+  #rosie{position:absolute;left:62px;bottom:190px;width:230px;height:230px;z-index:3;animation:float 4.6s ease-in-out infinite}
+  #rosie svg{width:100%;height:100%;overflow:visible}
+  body.talking #rosie svg{animation:talk .32s ease-in-out infinite}
+  #mO{opacity:0}
+  body.talking #mO{animation:mo .3s steps(1,end) infinite}body.talking #mC{animation:mc .3s steps(1,end) infinite}
+  @keyframes mo{0%{opacity:1}50%{opacity:0}}@keyframes mc{0%{opacity:0}50%{opacity:1}}
+  @keyframes float{50%{transform:translateY(-10px)}}
+  @keyframes talk{50%{transform:scale(1.035,.97)}}
+
+  /* the stage: where the hand and the main task live */
+  #stage{position:absolute;left:420px;right:40px;top:116px;bottom:118px;border-radius:40px;background:var(--sand2);overflow:hidden}
+  #gl{position:absolute;inset:0;width:100%;height:100%;display:none}
+  #do{position:absolute;inset:0;width:100%;height:100%;display:none;touch-action:none}
+  .tag{position:absolute;font-size:19px;font-weight:900;border-radius:999px;padding:9px 18px;z-index:2}
+  .tag.pink{background:var(--pink);color:#fff}.tag.white{background:#fff;color:var(--plum2)}.tag.sun{background:var(--sun);color:var(--plum)}
+  #watchTag{left:28px;top:26px;display:none}
+  #ready{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:none;z-index:3}
+  .big{height:84px;padding:0 44px;border-radius:999px;font-size:28px;font-weight:900;background:var(--pink);color:#fff;box-shadow:0 10px 26px rgba(214,47,134,.35);animation:breathe 2.8s ease-in-out infinite}
+  .big.calm{animation:none}
+  @keyframes breathe{50%{transform:translateX(var(--tx,0)) scale(1.04);box-shadow:0 14px 34px rgba(214,47,134,.45)}}
+  #ready{--tx:-50%}
+  .panel{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:40px;text-align:center}
+  .panel.on{display:flex}
+  .panel h1{font-size:54px;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+  .panel p{font-size:24px;font-weight:700;color:var(--plum2);line-height:1.4;max-width:600px}
+  .trust{display:flex;align-items:center;gap:12px;background:#fff;border-radius:20px;padding:14px 20px;font-size:18px;font-weight:800;text-align:left;max-width:560px}
+  .trust i{flex:none;width:44px;height:44px;border-radius:50%;background:#e6f0e6;display:grid;place-items:center;font-style:normal;font-size:22px}
+  .trust small{display:block;font-size:15px;font-weight:700;color:var(--plum2)}
+  .today{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .today span{background:#fff;border-radius:999px;padding:10px 18px;font-size:19px;font-weight:800}
+  .choice{display:flex;gap:18px}
+  .choice button{min-width:280px;height:110px;border-radius:30px;font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:var(--soft)}
+  .yes{background:var(--sage);color:#fff}.no{background:#fff;color:var(--plum)}
+  .vol{display:none;align-items:center;gap:22px;background:#fff;border-radius:26px;padding:18px 24px;font-size:22px;font-weight:800;text-align:left}
+  .vol.on{display:flex}
+
+  /* progress dots under the hand */
+  #dots{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:none;gap:9px;align-items:center;font-size:18px;font-weight:900;color:var(--plum2);z-index:2;background:rgba(255,255,255,.75);padding:8px 16px;border-radius:999px}
+  #dots i{width:13px;height:13px;border-radius:50%;background:#dccbc0}#dots i.done{background:var(--sage)}#dots i.now{background:var(--pink);box-shadow:0 0 0 4px #f8cfe2}
+  #cd{position:absolute;right:30px;top:26px;width:130px;height:130px;border-radius:50%;background:#fff;display:none;place-items:center;z-index:3;box-shadow:var(--soft)}
+  #cd.on{display:grid}
+  #cd b{font-size:62px;font-weight:900;line-height:1;margin-top:-10px}
+  #cd small{position:absolute;bottom:22px;font-size:14px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--plum2)}
+  #cd svg{position:absolute;inset:0}
+
+  /* bottom: the three ways out, always in the same place */
+  .bottom{position:absolute;left:36px;right:36px;bottom:26px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+  .bottom > span{display:flex;gap:14px}
+  #help{background:var(--sand2)}
+  #skip{background:var(--sand2)}
+  #hurt{background:#fff;color:var(--pinkDeep);box-shadow:0 0 0 2.5px var(--pinkDeep) inset}
+  body.calmBar .bottom .pill:not(#help){visibility:hidden}
+
+  /* sheets: one question, big answers */
+  .sheet{position:absolute;inset:0;background:rgba(43,31,42,.35);display:none;align-items:center;justify-content:center;z-index:20;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  .sheet.on{display:flex}
+  .card{background:var(--card);border-radius:36px;padding:38px 44px;width:640px;text-align:center;box-shadow:0 20px 60px rgba(43,31,42,.25);animation:pop .4s cubic-bezier(.3,1.4,.5,1)}
+  @keyframes pop{from{transform:scale(.85);opacity:0}}
+  .card h2{font-size:40px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+  .card p{font-size:22px;font-weight:700;color:var(--plum2);margin:12px 0 26px;line-height:1.4}
+  .stack{display:grid;gap:14px}
+  .stack button{height:86px;border-radius:26px;font-size:27px;font-weight:900;background:var(--sand);display:flex;align-items:center;justify-content:center;gap:12px}
+  .stack button.main{background:var(--pink);color:#fff}
+  .stack button.quiet{background:none;height:60px;font-size:22px;color:var(--plum2)}
+
+  /* check-in overlay */
+  #checkF{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:30;display:none;background:var(--sand);opacity:0;transition:opacity .45s ease}
+  #checkF.show{opacity:1}
+
+  /* reward */
+  .medal{position:relative;width:150px;height:150px;display:grid;place-items:center;animation:spin 1s cubic-bezier(.3,1.4,.5,1) both}
+  @keyframes spin{from{transform:rotate(-120deg) scale(.3)}}
+  .medal svg{position:absolute;inset:0}
+  .medal b{position:relative;font-size:50px;font-weight:900;margin-top:-10px}.medal small{position:absolute;bottom:40px;font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+  .week{display:flex;gap:10px}
+  .week span{display:grid;gap:4px;justify-items:center;font-size:14px;font-weight:900;color:#a3949d}
+  .week i{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;font-style:normal;font-size:22px}
+  .week .today i{background:var(--sun);box-shadow:0 0 0 4px #fff,0 0 0 7px var(--pink)}.week .today{color:var(--pink)}
+  .fam{display:flex;gap:16px}
+  .fam button{width:150px;background:#fff;border-radius:24px;padding:10px 10px 14px;box-shadow:var(--soft);font-size:19px;font-weight:900;position:relative}
+  .fam img{width:130px;height:130px;object-fit:cover;border-radius:16px;display:block;margin-bottom:8px}
+  .fam button.new::after{content:"";position:absolute;right:10px;top:10px;width:18px;height:18px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 3px #fff}
+  .viewer{display:grid;grid-template-columns:420px 1fr;gap:30px;align-items:center;width:960px;text-align:left}
+  .viewer img{width:420px;height:420px;object-fit:cover;border-radius:28px}
+  .viewer h2{font-size:40px}.viewer p{font-size:27px;font-weight:700;color:var(--plum);line-height:1.45;margin:14px 0 24px}
+  .viewer small{font-size:20px;font-weight:800;color:var(--plum2)}
+  #petals{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+  #pReward{gap:0;padding:56px 64px}
+  #pReward .share{margin:26px 0 18px}
+  #pReward .reply{margin-bottom:24px}
+  #pReward .waiting{margin:0 0 24px}
+  .rwHead{display:flex;align-items:center;gap:18px;text-align:left}
+  .rwHead p{font-size:21px!important;margin-top:4px}
+  .share{width:560px;display:flex;align-items:center;gap:14px;padding:4px 6px;text-align:left;animation:pop .5s .3s both cubic-bezier(.3,1.4,.5,1)}
+  .share b{display:block;font-size:22px;font-weight:900}
+  .shareT{display:flex;align-items:center;gap:10px;font-size:22px}.shareT small{margin-left:auto;font-size:15px;font-weight:800;color:var(--plum2)}
+  .okDot{flex:none;width:40px;height:40px;border-radius:50%;background:var(--sage);color:#fff;display:grid;place-items:center;font-weight:900;font-size:18px}
+  .share ul{list-style:none;padding:0;margin:12px 0 10px;display:grid;gap:6px}
+  .share li{font-size:20px;font-weight:800;display:flex;gap:10px;align-items:center}
+  .share .lock{display:block;font-size:16px;font-weight:700;color:var(--plum2);margin-top:2px}
+  .reply{display:none;width:560px;align-items:center;gap:18px;background:#fff;border-radius:28px;padding:18px 20px;text-align:left;box-shadow:0 0 0 3px var(--pink),var(--soft);animation:slideUp .6s cubic-bezier(.3,1.4,.5,1)}
+  .reply.on{display:flex}
+  .reply img{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:none}
+  .reply small{display:block;font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--pink)}
+  .reply b{font-size:23px;font-weight:800;line-height:1.3}
+  .reply i{margin-left:auto;font-style:normal;width:44px;height:44px;border-radius:50%;background:var(--sand);display:grid;place-items:center;font-size:16px;flex:none}
+  @keyframes slideUp{from{transform:translateY(40px);opacity:0}}
+  .waiting{font-size:19px!important;font-weight:800;color:var(--plum2)}
+  .waiting span{display:inline-block;animation:blink 1.2s infinite}.waiting span:nth-child(2){animation-delay:.2s}.waiting span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{50%{opacity:.2}}
+  #pReward h1{font-size:42px}
+  #pReward .medal{width:110px;height:110px}#pReward .medal b{font-size:36px;margin-top:-8px}#pReward .medal small{bottom:28px;font-size:11px}
+  #pReward .fam img{width:118px;height:118px}#pReward .fam button{width:138px}
+  #pReward .big{height:76px;font-size:25px;flex:none;padding:0 48px}
+  #pReward > *:not(#petals){position:relative;z-index:2}
+  #petals i{position:absolute;top:-60px;font-style:normal;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(900px) rotate(540deg)}}
+  .days{display:flex;gap:8px;justify-content:center;margin:0 0 22px}
+  .days button{width:62px;height:62px;border-radius:50%;background:var(--sand);font-size:20px;font-weight:900;color:var(--plum2)}
+  .days button[aria-pressed="true"]{background:var(--pink);color:#fff;box-shadow:0 0 0 4px #f8cfe2}
+  .bell{font-size:64px;line-height:1}
+  #pRemind .choice button{min-width:270px}
+  /* editorial panels: one left edge, a small label, a headline that mixes light and bold, one paragraph, air */
+  .panel.ed{align-items:flex-start;justify-content:center;text-align:left;padding:56px 64px;gap:0}
+  .label{display:inline-block;background:#fff;border-radius:999px;padding:9px 18px;font-size:16px;font-weight:800;color:var(--plum2);margin-bottom:26px}
+  .edH{font-size:58px!important;font-weight:600!important;letter-spacing:-.025em;line-height:1.05!important;color:var(--plum)}
+  .edH b{font-weight:900}
+  .edP{font-size:24px!important;font-weight:600!important;color:var(--plum2)!important;line-height:1.45!important;max-width:520px!important;margin:18px 0 26px}
+  .edP b{color:var(--plum);font-weight:800}
+  .steps{list-style:none;padding:0;margin:0 0 30px;display:flex;gap:28px}
+  .steps li{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800}
+  .steps i{width:32px;height:32px;border-radius:50%;background:#fff;display:grid;place-items:center;font-style:normal;font-size:15px;font-weight:900;color:var(--pink)}
+  .edNote{font-size:16px;font-weight:600;color:var(--plum2);margin-top:22px}.edNote b{color:var(--plum)}
+  .panel.ed .big{animation:none;flex:none;height:84px}
+  .panel.ed .choice{margin-top:4px}.panel.ed .choice button{min-width:250px;height:96px;font-size:25px}
+  .panel.ed .days{justify-content:flex-start;margin:0 0 24px}
+  .panel.ed .vol{margin-bottom:22px}
+  /* wake screen: the one tap browsers need before Rosie may speak */
+  #wake{position:absolute;inset:0;z-index:40;background:var(--sand);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;cursor:pointer;transition:opacity .5s}
+  #wake.gone{opacity:0;pointer-events:none}
+  .sleepy{position:relative;width:240px;height:240px;margin-bottom:52px;animation:breath 3.6s ease-in-out infinite}
+  .sleepy svg{width:100%;height:100%;overflow:visible}
+  @keyframes breath{50%{transform:scale(1.04,.97) translateY(4px)}}
+  .z{position:absolute;right:-8px;top:10px;font-size:34px;font-weight:900;color:var(--plum2);opacity:0;animation:zz 3.6s ease-in-out infinite}
+  .z2{animation-delay:1.2s;font-size:28px}.z3{animation-delay:2.4s;font-size:42px}
+  @keyframes zz{0%{transform:translate(0,20px);opacity:0}30%{opacity:.8}100%{transform:translate(40px,-60px);opacity:0}}
+  #wake .label{margin-bottom:18px}
+  #wake .edH{font-size:62px!important}
+  .wTap{display:flex;align-items:center;gap:14px;margin-top:26px;font-size:26px;font-weight:800;color:var(--pink)}
+  .ring{width:22px;height:22px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 0 rgba(214,47,134,.5);animation:ring 1.8s ease-out infinite}
+  @keyframes ring{to{box-shadow:0 0 0 22px rgba(214,47,134,0)}}
+  #hop{width:100%;height:100%}
+  body.intro #hop{animation:hopIn 1.7s cubic-bezier(.35,.1,.3,1) both}
+  @keyframes hopIn{0%{transform:translate(-520px,0) scale(.7)}12%{transform:translate(-410px,-120px) scale(.78)}24%{transform:translate(-300px,0) scale(.86,.8)}
+    38%{transform:translate(-200px,-95px) scale(.9)}50%{transform:translate(-110px,0) scale(.98,.9)}64%{transform:translate(-40px,-60px) scale(1)}
+    78%{transform:translate(0,0) scale(1.14,.86)}88%{transform:translate(0,-8px) scale(.95,1.06)}100%{transform:none}}
+  body.intro #rosie svg{animation:wave .9s 1.75s ease-in-out both}
+  @keyframes wave{25%{transform:rotate(-9deg)}55%{transform:rotate(8deg)}80%{transform:rotate(-3deg)}}
+  body.intro .bubble{animation:popIn .5s 1.6s both cubic-bezier(.3,1.5,.5,1)}
+  @keyframes popIn{from{transform:scale(.5) translateY(30px);opacity:0}}
+  body.intro #pGreet > *{animation:riseIn .65s both cubic-bezier(.3,1.4,.5,1)}
+  body.intro #pGreet > :nth-child(1){animation-delay:1.8s}body.intro #pGreet > :nth-child(2){animation-delay:1.95s}body.intro #pGreet > :nth-child(3){animation-delay:2.1s}
+  body.intro #pGreet > :nth-child(4){animation-delay:2.25s}body.intro #pGreet > :nth-child(5){animation-delay:2.45s}body.intro #pGreet > :nth-child(6){animation-delay:2.6s}
+  @keyframes riseIn{from{transform:translateY(34px);opacity:0}}
+  body.intro .top{animation:fadeIn .6s .2s both}@keyframes fadeIn{from{opacity:0}}
+  .decor{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .decor i{position:absolute;display:block;animation:bob 6s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-12px) rotate(6deg)}}
+  #pGreet > :not(.decor){position:relative;z-index:1}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="device"><div id="screen">
+  <div class="top">
+    <button id="logo" aria-label="Rosie. Family: press and hold for setup"><img src="vendor/rosie-logo.png" alt="Rosie"></button>
+    <div id="where"><small id="where1">Good morning</small><span id="where2">Today's hand moves</span></div>
+    <button class="pill" id="again"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Say it again</button>
+  </div>
+
+  <div class="bubble" id="bubble"><div id="say1">Hello!</div><div id="say2"></div></div>
+  <div id="rosie"></div>
+
+  <div id="stage">
+    <canvas id="gl"></canvas>
+    <svg id="do" viewBox="-12 2 104 100" preserveAspectRatio="xMidYMid meet"></svg>
+    <span class="tag pink" id="watchTag">👀 Watch me first</span>
+    <span class="tag pink" id="tagA" style="display:none"></span>
+    <span class="tag white" id="tagB" style="display:none"></span>
+    <span class="tag sun" id="tagC" style="display:none"></span>
+    <div id="cd"><svg viewBox="0 0 130 130"><circle cx="65" cy="65" r="56" fill="none" stroke="#f1e3da" stroke-width="10"/><circle id="cdRing" cx="65" cy="65" r="56" fill="none" stroke="#d62f86" stroke-width="10" stroke-linecap="round" transform="rotate(-90 65 65)" stroke-dasharray="0 400"/></svg><b id="cdN">3</b><small>Hold</small></div>
+    <div id="dots"></div>
+    <button class="big" id="ready">I'm ready</button>
+
+    <!-- greeting -->
+    <div class="panel ed" id="pGreet">
+      <span class="label" id="gLabel">Today</span>
+      <h1 class="edH"><span id="gHi">Good evening,</span><br><b id="gName">Margaret.</b></h1>
+      <p class="edP">Three gentle moves for your hands. <b>About five minutes.</b></p>
+      <ol class="steps"><li><i>1</i>Hand check-in</li><li><i>2</i>Finger walk</li><li><i>3</i>Fist stretch</li></ol>
+      <button class="big" id="start">Let's start</button>
+      <p class="edNote">Exercises from <b>Mayo Clinic</b>, recommended by your physiotherapist.</p>
+    </div>
+    <!-- hearing -->
+    <div class="panel ed" id="pHear">
+      <span class="label">Sound check</span>
+      <h1 class="edH">Can you <b>hear</b> me?</h1>
+      <p class="edP">Tap a button below. My words are <b>always on the screen</b> too.</p>
+      <div class="vol" id="vol"><svg width="110" height="90" viewBox="0 0 110 90"><rect x="10" y="8" width="84" height="74" rx="10" fill="#2b1f2a"/><rect x="16" y="14" width="72" height="62" rx="5" fill="#efe2d8"/><rect x="96" y="18" width="7" height="16" rx="3" fill="#d62f86"/><path d="M104 26h4" stroke="#d62f86" stroke-width="3"/></svg>
+        <div>Press the <b style="color:var(--pink)">top button</b> on the side of your iPad to turn me up.</div></div>
+      <div class="choice"><button class="yes" id="hearYes">Yes, I can</button><button class="no" id="hearNo">Louder, please</button></div>
+    </div>
+    <!-- reward -->
+    <div class="panel ed" id="pReward"><div id="petals"></div>
+      <div class="medal" style="display:none"><svg viewBox="-75 -75 150 150"><g id="medalG"></g></svg><b id="medalN">2</b><small>moves</small></div>
+      <span class="label" id="rwSub">2 moves done · 1 of 2 this week</span>
+      <h1 class="edH" id="rwT">Lovely work, Margaret!</h1>
+      <div class="share"><span class="okDot">✓</span><div><b id="shareTo">Maya got your update</b><small class="lock">Only <span id="shareWho">Maya</span> and your physiotherapist can see it.</small></div><ul id="shareL" style="display:none"></ul></div>
+      <button class="reply" id="reply" aria-live="polite"><img id="rImg" alt=""><span><small id="rWho">Maya replied</small><b id="rMsg"></b></span><i>▶</i></button>
+      <p class="waiting" id="waiting">Waiting for Maya… <span>●</span><span>●</span><span>●</span></p>
+      <button class="big calm" id="finish" style="background:var(--plum);box-shadow:none">All done for today</button>
+    </div>
+    <!-- the last screen: a reminder, yes or no -->
+    <div class="panel ed" id="pRemind"><span class="label" id="remBell">Reminders</span><h1 class="edH" id="remT">Shall I <b>remind</b> you?</h1>
+      <p class="edP" id="remP">Hand moves work best a little and often. I'll remind you <b>twice a week</b>, in the morning.</p>
+      <div class="days" id="days"></div>
+      <div class="choice" id="remBtns"><button class="yes" id="remYes">Yes, remind me</button><button class="no" id="remNo">No, thank you</button></div></div>
+    <!-- goodbye -->
+    <div class="panel" id="pBye"><h1 id="byeT">See you soon, <span class="nm">Margaret</span> 🌼</h1><p id="byeP">You can put the iPad down now.</p></div>
+  </div>
+
+  <div class="bottom">
+    <button class="pill" id="help">❓ Help</button>
+    <span><button class="pill" id="skip">Skip this move</button><button class="pill" id="hurt">✋ Stop, this hurts</button></span>
+  </div>
+
+  <!-- sheets -->
+  <div class="sheet" id="sHelp"><div class="card"><h2>What would help?</h2><p>Pick one. You can't do anything wrong.</p>
+    <div class="stack"><button class="main" id="hShow">👀 Show me again</button><button id="hSkip">⏭ Skip this move</button><button id="hDone">🌙 I'm done for today</button><button class="quiet" id="hClose">Go back</button></div></div></div>
+  <div class="sheet" id="sHurt"><div class="card"><h2>Let's stop and rest</h2><p>These moves should never hurt. Rest your hand on your lap for a moment.</p>
+    <div class="stack"><button class="main" id="rGentle">🌸 Try again, gentler</button><button id="rDone">🌙 Finish for today</button></div></div></div>
+  <div class="sheet" id="sStuck"><div class="card"><h2>Shall we skip this one?</h2><p>That's completely fine. We can try it again tomorrow.</p>
+    <div class="stack"><button class="main" id="kSkip">⏭ Yes, skip it</button><button id="kKeep">🙂 No, I'll keep going</button></div></div></div>
+  <div class="sheet" id="sView"><div class="card" style="width:auto"><div class="viewer"><img id="vImg" alt=""><div><small id="vWho"></small><p id="vMsg"></p><button class="big calm" id="vDone">Done</button></div></div></div></div>
+
+  <button id="wake" aria-label="Tap anywhere to wake Rosie">
+    <div class="sleepy"><svg id="sleepR" viewBox="0 0 100 100"></svg><span class="z z1">z</span><span class="z z2">z</span><span class="z z3">Z</span></div>
+    <span class="label">Rosie is resting</span>
+    <h1 class="edH"><span id="wHi">Good morning,</span> <b id="wName">Margaret.</b></h1>
+    <p class="wTap"><span class="ring"></span>Tap anywhere to wake Rosie</p>
+  </button>
+  <iframe id="checkF" title="Hand check-in" allow="autoplay"></iframe>
+</div></div>
+
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+<script type="module">
+import { makeStage } from './hand3d.js';
+const $ = id => document.getElementById(id);
+
+/* ── fit: iPad frame on a laptop, full-screen on a real iPad ── */
+const real = matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) >= 740;
+if (real) document.body.classList.add('real');
+function fit(){ if (real) return; const s = Math.min((innerWidth - 40) / 1216, (innerHeight - 40) / 856, 1); $('device').style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit); fit();
+
+/* ── who she is (set by family) ── */
+let PROFILE = {name:'Margaret'};
+try { PROFILE = {...PROFILE, ...JSON.parse(localStorage.getItem('rosie-profile') || '{}')}; } catch(e){}
+const NAME = new URLSearchParams(location.search).get('name') || PROFILE.name;
+const LOG = [];
+const log = (what, extra = {}) => { LOG.push({what, ...extra, at:new Date().toISOString()}); try { localStorage.setItem('rosie-log', JSON.stringify(LOG)); } catch(e){} };
+let gentle = false;
+
+/* ── Rosie ── */
+const R0 = 46, A = 2.4, Bn = 24; let d = '';
+for (let i = 0; i <= 360; i++){ const t = i / 360 * Math.PI * 2 - Math.PI / 2, r = R0 + A * Math.pow(Math.abs(Math.cos(t * Bn / 2)), .7); d += (i ? 'L' : 'M') + (50 + r * Math.cos(t)).toFixed(2) + ',' + (50 + r * Math.sin(t)).toFixed(2); }
+$('rosie').innerHTML = `<div id="hop"><svg viewBox="0 0 100 100"><defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e424a8"/><stop offset=".45" stop-color="#ec3a93"/><stop offset="1" stop-color="#fb6070"/></linearGradient></defs><ellipse cx="50" cy="110" rx="32" ry="5" fill="#000" opacity=".1"/><path d="${d}Z" fill="url(#rg)"/><ellipse cx="40" cy="38" rx="3.8" ry="3.4" fill="#111"/><ellipse cx="60.5" cy="38" rx="3.8" ry="3.4" fill="#111"/><path id="mC" d="M36.5 58 C40.5 64 46 67 51 66.8 C57 66.6 60.5 62.5 64 58" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/><g id="mO"><path d="M38 57.5 C41 67.5 60 67.5 63 57.5 C56 60 45 60 38 57.5Z" fill="#111"/><ellipse cx="50.5" cy="63.2" rx="5.5" ry="2.2" fill="#ff7aa8"/></g></svg></div>`;
+
+/* ── sound: chimes + Rosie's voice (Sarah through server.py, the built-in voice otherwise). Her words are always on screen. ── */
+let ac;
+function audio(){ if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); return ac; }
+function chime(f, at = 0, g = .09){ try { const a = audio(), t = a.currentTime + at, o = a.createOscillator(), v = a.createGain(); o.type = 'sine'; o.frequency.value = f; v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + .02); v.gain.exponentialRampToValueAtTime(.0001, t + 1.2); o.connect(v).connect(a.destination); o.start(t); o.stop(t + 1.3); } catch(e){} }
+const yay = () => [523, 659, 784].forEach((f, i) => chime(f, i * .09));
+const player = new Audio(); let speakGen = 0, lastLine = null;
+async function say(text, short = text, sub = ''){
+  lastLine = [text, short, sub]; const my = ++speakGen;
+  $('say1').textContent = short; $('say2').textContent = sub;
+  $('bubble').classList.remove('new'); void $('bubble').offsetWidth; $('bubble').classList.add('new');
+  player.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel();
+  try {
+    const r = await fetch('/tts', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text, voice:'Sarah'})});
+    if (!r.ok) throw 0; const url = URL.createObjectURL(await r.blob()); if (my !== speakGen) return;
+    player.src = url; player.onplay = () => document.body.classList.add('talking'); player.onended = player.onerror = () => document.body.classList.remove('talking');
+    await player.play(); return;
+  } catch(e){}
+  if (my !== speakGen || !('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text); u.rate = .88; u.onstart = () => document.body.classList.add('talking'); u.onend = () => document.body.classList.remove('talking');
+  speechSynthesis.speak(u);
+}
+$('again').onclick = () => { audio(); poke(); if (lastLine) say(lastLine[0] + (lastLine[0].endsWith('time.') ? '' : ' Take your time.'), lastLine[1], lastLine[2]); };
+
+/* ── stage helpers ── */
+const G = makeStage($('gl'));
+const SVG = $('do');
+function fitHand(key){
+  if (SVG.dataset.fit === key) return; SVG.dataset.fit = key;
+  const b = SVG.getBBox(), pad = 8, below = 16;                       // extra room underneath for the progress dots
+  SVG.setAttribute('viewBox', `${(b.x - pad).toFixed(1)} ${(b.y - pad).toFixed(1)} ${(b.width + pad * 2).toFixed(1)} ${(b.height + pad + below).toFixed(1)}`);
+}
+function show(panel){ document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === panel)); }
+function tags(a, b, c){ [['tagA', a], ['tagB', b], ['tagC', c]].forEach(([id, v]) => { const t = $(id); if (!v){ t.style.display = 'none'; return; } t.style.display = ''; t.textContent = v[0]; Object.assign(t.style, {left:'', right:'', top:'', bottom:''}, v[1]); }); }
+function dots(n, i, label){ if (!n){ $('dots').style.display = 'none'; return; } $('dots').style.display = 'flex';
+  $('dots').innerHTML = Array.from({length:n}, (_, k) => `<i class="${k < i ? 'done' : k === i ? 'now' : ''}"></i>`).join('') + `&nbsp;${label}`; }
+function where(a, b){ $('where1').textContent = a; $('where2').textContent = b; }
+function countdown(left, total){ $('cd').classList.add('on'); $('cdN').textContent = Math.max(1, Math.ceil(left)); $('cdRing').setAttribute('stroke-dasharray', `${352 * (1 - left / total)} 400`); }
+const cdOff = () => $('cd').classList.remove('on');
+function mode(m){ $('gl').style.display = m === 'watch' || m === 'mirror' ? 'block' : 'none'; SVG.style.display = m === 'do' ? 'block' : 'none';
+  $('watchTag').style.display = m === 'watch' ? 'inline-block' : 'none'; $('ready').style.display = 'none'; }
+function bar(on){ document.body.classList.toggle('calmBar', !on); }
+
+/* ── never leave her stuck: 10 s → say it again, 20 s → show the demo again, 35 s → offer to skip ── */
+let idleOn = false, idleAt = 0, idleStage = 0, current = null, replays = 0;   // replays: demos shown since she last made progress
+function poke(){ idleAt = performance.now(); idleStage = 0; }
+function idle(on){ idleOn = on; poke(); }
+setInterval(() => {
+  if (!idleOn || !current || document.querySelector('.sheet.on')) return;
+  const s = (performance.now() - idleAt) / 1000;
+  if (s > 10 && idleStage === 0){ idleStage = 1; if (lastLine) say(lastLine[0] + ' Take your time.', lastLine[1], lastLine[2]); }
+  else if (s > 20 && idleStage === 1 && replays < 1 && current){ idleStage = 2; replays++; current.watch(true); }
+  else if (s > 20 && idleStage === 1){ idleStage = 3; open('sStuck'); say("That's okay. Shall we skip this one? We can try again tomorrow.", 'Shall we skip this one?'); }
+}, 500);
+addEventListener('pointerdown', () => { audio(); poke(); }, true);
+
+/* sheets */
+function open(id){ $(id).classList.add('on'); }
+function close(){ document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on')); poke(); }
+$('help').onclick = () => { open('sHelp'); say('What would help? Pick one. You can\'t do anything wrong.', 'What would help?'); };
+$('hClose').onclick = () => { close(); lastLine && say(...lastLine); };
+$('hShow').onclick = () => { close(); current && current.watch(true); };
+$('hSkip').onclick = $('kSkip').onclick = $('skip').onclick = () => { close(); log('skipped', {move: current && current.name}); next("That's okay. Let's try the next one.") ; };
+$('kKeep').onclick = () => { close(); replays = 0; say("Great. Here we go again.", 'Here we go again'); current && current.again(); };
+$('hDone').onclick = $('rDone').onclick = () => { close(); log('finished early', {move: current && current.name}); reward(true); };
+$('hurt').onclick = () => { current && current.pause(); open('sHurt'); log('pain', {move: current && current.name}); say("Let's stop and rest. These moves should never hurt. Rest your hand on your lap for a moment.", "Let's stop and rest"); };
+$('rGentle').onclick = () => { close(); gentle = true; say("Okay. We'll go slower and gentler.", 'Slower and gentler'); setTimeout(() => current && current.again(), 1800); };
+
+/* ═════════ the day ═════════ */
+const PLAN = [];
+function next(line){ stopMoves(); cdOff(); tags(); dots(0); const i = PLAN.indexOf(current); const n = PLAN[i + 1];
+  if (line) say(line);
+  setTimeout(() => n ? n.start() : reward(false), line ? 1800 : 0); }
+
+/* 1 · greeting */
+$('gHi').textContent = `${greeting()},`; $('gName').textContent = `${NAME}.`;
+document.querySelectorAll('.nm').forEach(n => n.textContent = NAME);
+function greeting(){ const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+show('pGreet'); mode('none'); bar(false); where(greeting(), "Today's hand moves");
+$('sleepR').innerHTML = `<defs><linearGradient id="rgS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e424a8"/><stop offset=".45" stop-color="#ec3a93"/><stop offset="1" stop-color="#fb6070"/></linearGradient></defs><ellipse cx="50" cy="110" rx="32" ry="5" fill="#000" opacity=".1"/><path d="${d}Z" fill="url(#rgS)"/><path d="M35 39q5 4 10 0M55.5 39q5 4 10 0" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/><path d="M44 60q6.5 4 13 0" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>`;
+$('wHi').textContent = `${greeting()},`; $('wName').textContent = `${NAME}.`;
+$('rosie').style.visibility = 'hidden'; $('bubble').style.visibility = 'hidden';
+function wake(){
+  if ($('wake').classList.contains('gone')) return;
+  audio(); $('wake').classList.add('gone'); $('rosie').style.visibility = ''; $('bubble').style.visibility = '';
+  document.body.classList.add('intro'); setTimeout(() => document.body.classList.remove('intro'), 3600);
+  [523, 659, 784, 1047].forEach((f, i) => chime(f, .9 + i * .1, .07));                       // a little "hello" as she lands
+  setTimeout(() => say(`Hello, ${NAME}! It's Rosie. Today we have three gentle moves for your hands. About five minutes. Tap Let's start when you're ready.`,
+    `Hello, ${NAME}!`, "Tap Let's start when you're ready."), 1500);
+  log('woke');
+}
+$('wake').addEventListener('click', wake);
+addEventListener('keydown', e => { if (e.code === 'Space' && !$('wake').classList.contains('gone')){ e.preventDefault(); wake(); } });
+$('say1').textContent = `Hello, ${NAME}!`; $('say2').textContent = "It's Rosie. Tap the pink button when you're ready.";
+lastLine = [`Hello, ${NAME}! It's Rosie. Tap the pink button when you're ready.`, `Hello, ${NAME}!`, "Tap the pink button when you're ready."];
+$('start').onclick = () => { audio(); [523, 659, 784, 1047].forEach((f, i) => chime(f, i * .11)); hearing(); };
+
+/* 2 · hearing check */
+function hearing(){
+  show('pHear'); where('Before we start', 'Sound check'); idle(true); current = null; let tries = 0;
+  say(`Hello, ${NAME}! Can you hear me? Tap yes, or tap louder.`, 'Can you hear me?', 'Tap a button below.');
+  $('hearYes').onclick = () => { idle(false); log('hearing ok'); say("Wonderful. Let's begin.", 'Wonderful!'); setTimeout(checkin, 1600); };
+  $('hearNo').onclick = () => { tries++; $('vol').classList.add('on'); player.volume = 1;
+    say("Press the top button on the side of your iPad to turn me up. Can you hear me now?", 'Turn me up', 'Press the top button on the side of the iPad.');
+    if (tries >= 2){ log('hearing low'); setTimeout(() => { say("That's okay. My words will always be on the screen. Let's begin.", 'My words are on the screen'); setTimeout(checkin, 2600); }, 5200); } };
+}
+
+/* 3 · hand check-in (3D, joint dots) */
+function checkin(){
+  idle(false); show(''); where('Step 1 of 3', 'Hand check-in');
+  const f = $('checkF'); f.classList.remove('show'); f.src = `pain.html?call=${encodeURIComponent(NAME)}`; f.style.display = 'block';
+  clearTimeout(checkin.t); checkin.t = setTimeout(() => f.classList.add('show'), 3000);   // fades in once it has drawn (or after 3 s)
+}
+addEventListener('message', e => {
+  const m = e.data || {};
+  if (m.rosieReady){ clearTimeout(checkin.t); $('checkF').classList.add('show'); return; }
+  if (!(m.rosiePain || m.rosiePainBack)) return;
+  const f = $('checkF'); f.classList.remove('show'); setTimeout(() => { f.style.display = 'none'; f.src = 'about:blank'; }, 460);
+  $('checkF').blur(); window.focus(); document.body.tabIndex = -1; document.body.focus();   // keys (the Space presenter key) come back to Rosie
+  if (m.rosiePain){ gentle = m.rosiePain.length > 0; log('check-in', {spots: m.rosiePain}); }
+  PLAN[0].start();
+});
+
+/* 4 · Finger walk (Mayo): palm down, thumb out, each finger slides up and toward the thumb */
+const XS = [38, 51, 64, 77], TOPS = [22, 14, 20, 30], TIP = XS.map((x, i) => [x, TOPS[i] + 6.5]), LAND = TIP.map(([x, y], i) => [x - 16 + i * 2.2, y + 7 - i * 1.2]);
+const FingerWalk = {
+  name:'Finger walk',
+  start(){ replays = 0; where('Step 2 of 3', 'Finger walk'); bar(true); this.rounds = gentle ? 1 : 2; this.round = 0; this.i = 0; current = this; this.watch(false); },
+  watch(again){
+    idle(false); show(''); mode('watch'); tags(); dots(0); cdOff();
+    let spoke = -1;
+    const CYCLE = G.fingerWalk((i, loop) => {
+      if (i < 0 || spoke === loop) return; if (i === 0 && loop === 0){ spoke = loop; }
+    });
+    say(again ? "Let me show you again. Your thumb moves out to the side. Then each finger slides toward your thumb, one at a time." :
+        "Watch me first. Rest your hand flat. Move your thumb out to the side. Then each finger slides toward your thumb, one at a time.",
+        'Watch me first', 'Each pink finger slides toward the thumb, one at a time.');
+    clearTimeout(this.tw); clearTimeout(this.tr);
+    this.tr = setTimeout(() => { $('ready').style.display = ''; }, CYCLE * 1000);
+    this.tw = setTimeout(() => this.do(), CYCLE * 2000 + 600);            // carries on by itself after two showings
+    $('ready').onclick = () => { clearTimeout(this.tw); this.do(); };
+  },
+  do(){
+    clearTimeout(this.tw); if (current !== this) return; mode('do'); idle(true); this.draw(); this.prompt();
+  },
+  again(){ this.i = 0; if (gentle) this.rounds = this.round + 1; this.do(); },   // gentler = finish this round and stop
+  pause(){ idle(false); },
+  prompt(){
+    const n = ['pointer', 'middle', 'ring', 'little'][this.i];
+    tags(['Slide this one', {left:'28px', top:'26px'}], ['Keep these still', {right:'28px', top:'90px'}], ['Thumb rests here', {left:'28px', bottom:'84px'}]);
+    dots(4, this.i, `Round ${this.round + 1} of ${this.rounds}`);
+    const first = this.i === 0;
+    say(first ? `Rest your hand flat, with your thumb on the yellow spot. Now slide your ${n} finger toward your thumb.` : `Now your ${n} finger. Slide it toward your thumb.`,
+        `Slide your ${n} finger toward your thumb`, 'Follow the pink dots. Keep the other fingers resting.');
+  },
+  draw(moved = -1){
+    const grey = 'stroke="#c9bcc4" stroke-width="2" fill="#f7f1ec" stroke-linejoin="round"', pink = 'stroke="#b4235f" stroke-width="2.4" fill="#f4a7c9" stroke-linejoin="round"', done = 'stroke="#5f9a6a" stroke-width="2" fill="#d9ecd9" stroke-linejoin="round"';
+    let o = `<rect x="-6.5" y="-36" width="13" height="40" rx="6.5" transform="translate(30 70) rotate(-78)" ${grey}/>`;
+    o += `<path d="M31.5 53 Q57 48 83.5 53 L83.5 66 A26 26 0 0 1 31.5 66 Z" ${grey}/>`;
+    XS.forEach((x, k) => { const st = k < this.i ? done : k === this.i ? pink : grey, rot = k < this.i || k === moved ? -Math.atan2(TIP[k][0] - LAND[k][0], 60 - LAND[k][1]) * 180 / Math.PI : 0;   // lands right on its ring
+      o += `<rect x="${x - 6.5}" y="${TOPS[k]}" width="13" height="${62 - TOPS[k]}" rx="6.5" ${st} transform="rotate(${rot} ${x} 60)" style="transition:transform .5s"/>`; });
+    o += `<circle cx="-4" cy="63" r="6.5" fill="#ffd43b" stroke="#2b1f2a" stroke-width="1.2"/>`;
+    if (this.i < 4){ const [tx, ty] = TIP[this.i], [lx, ly] = LAND[this.i];
+      o += `<path d="M${tx - 2} ${ty - 2} Q${(tx + lx) / 2 - 4} ${Math.min(ty, ly) - 8} ${lx + 2} ${ly - 2}" fill="none" stroke="#d62f86" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 4"/>`;
+      o += `<circle cx="${tx}" cy="${ty}" r="5.5" fill="#d62f86"><animate attributeName="r" values="5.5;6.6;5.5" dur="1.6s" repeatCount="indefinite"/></circle>`;
+      o += `<circle cx="${lx}" cy="${ly}" r="8.5" fill="none" stroke="#d62f86" stroke-width="1.8"/><circle cx="${lx}" cy="${ly}" r="3" fill="#d62f86" opacity=".5"/>`; }
+    SVG.innerHTML = o; fitHand('walk');
+  },
+  hit(){
+    const k = this.i; replays = 0; chime([523, 587, 659, 784][k]); this.draw(k); this.i++;
+    if (this.i >= 4){ this.round++; this.i = 0;
+      if (this.round >= this.rounds){ idle(false); yay(); dots(4, 4, 'All done'); tags(); log('done', {move:this.name}); return next('Lovely. That was the finger walk.'); }
+      say("That's one round. Let your fingers relax back. Let's do it once more.", 'One round done!'); setTimeout(() => { this.draw(); this.prompt(); }, 2600); return; }
+    setTimeout(() => { this.draw(); this.prompt(); }, 650);
+  },
+};
+// forgiving touch: a press that reaches the landing ring counts, by sliding or tapping; a press near the tip gets a nudge
+(() => {
+  let down = false, near = false;
+  const pt = e => { const p = SVG.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(SVG.getScreenCTM().inverse()); };
+  const check = e => { if (current !== FingerWalk || FingerWalk.i >= 4) return; const p = pt(e), [lx, ly] = LAND[FingerWalk.i], [tx, ty] = TIP[FingerWalk.i];
+    if (Math.hypot(p.x - lx, p.y - ly) < 12){ down = false; FingerWalk.hit(); }
+    else if (e.type === 'pointerdown' && Math.hypot(p.x - tx, p.y - ty) < 14) near = true; };
+  SVG.addEventListener('pointerdown', e => { down = true; near = false; SVG.setPointerCapture(e.pointerId); check(e); });
+  SVG.addEventListener('pointermove', e => { if (down) check(e); });
+  SVG.addEventListener('pointerup', () => { if (down && near && current === FingerWalk) say('Now slide it toward the yellow thumb.', 'Slide toward the thumb'); down = false; });
+})();
+
+/* 5 · Fist stretch (Mayo): handshake position, close into a gentle fist, thumb outside, don't squeeze */
+const FistStretch = {
+  name:'Fist stretch',
+  start(){ replays = 0; where('Step 3 of 3', 'Fist stretch'); bar(true); this.reps = gentle ? 3 : 5; this.done = 0; current = this; this.watch(false); },
+  watch(again){
+    idle(false); show(''); mode('watch'); tags(); dots(0); cdOff(); clearInterval(this.tk);
+    const CYCLE = G.fist('loop');
+    say(again ? "Let me show you again. Close your fingers slowly. Wrap your thumb on the outside. Don't squeeze. Then open again." :
+        "Watch me first. Hold your hand straight, like a handshake. Close your fingers into a gentle fist, with your thumb on the outside. Don't squeeze.",
+        'Watch me first', 'Close slowly. Thumb on the outside. Don\'t squeeze.');
+    clearTimeout(this.tw); clearTimeout(this.tr);
+    this.tr = setTimeout(() => { $('ready').style.display = ''; }, CYCLE * 1000);
+    this.tw = setTimeout(() => this.do(), CYCLE * 2000);
+    $('ready').onclick = () => { clearTimeout(this.tw); this.do(); };
+  },
+  do(){ clearTimeout(this.tw); if (current !== this) return; idle(true); this.flat(); this.loop(); },
+  again(){ if (gentle) this.reps = Math.min(this.reps, this.done + 2); this.do(); },   // gentler = just two more
+  pause(){ idle(false); this.state = 'paused'; cdOff(); },
+  flat(){
+    this.state = 'flat'; this.since = performance.now(); this.pressed = false; cdOff();
+    mode('do'); this.drawFlat(); tags(['Rest your hand here', {left:'28px', top:'26px'}]);
+    dots(this.reps, this.done, `${Math.min(this.done + 1, this.reps)} of ${this.reps}`);
+    say(this.done ? 'Open your hand slowly. Rest it flat on the screen again.' : 'Rest your hand flat on the screen.', 'Rest your hand flat on the screen', 'Anywhere on the hand is fine.');
+  },
+  drawFlat(){
+    const c = 'stroke="#b4235f" stroke-width="2" fill="#fbe3ee" stroke-linejoin="round"'; let o = '';
+    XS.forEach((x, k) => o += `<rect x="${x - 6.5}" y="${TOPS[k]}" width="13" height="${62 - TOPS[k]}" rx="6.5" ${c}/>`);
+    o += `<rect x="-6.5" y="-34" width="13" height="42" rx="6.5" transform="translate(34 72) rotate(-42)" ${c}/>`;
+    o += `<path d="M31.5 53 Q57 48 83.5 53 L83.5 66 A26 26 0 0 1 31.5 66 Z" ${c}/>`;
+    o += `<circle cx="57" cy="66" r="14" fill="#d62f86" opacity=".18"><animate attributeName="r" values="12;17;12" dur="2s" repeatCount="indefinite"/></circle>`;
+    SVG.innerHTML = o; fitHand('fist');
+  },
+  press(on){
+    if (current !== this) return; poke();
+    if (on && this.state === 'flat'){ this.pressed = true; this.pressAt = performance.now(); }
+    if (!on && this.state === 'flat' && this.pressed){ this.toFist(); }
+  },
+  toFist(){ this.state = 'fist'; this.since = performance.now(); chime(659);
+    mode('mirror'); G.fist('hold'); tags(['Fingers curl, thumb wraps', {left:'28px', top:'26px'}]);
+    say("Now lift your hand and make a gentle fist. Thumb on the outside. Hold it.", 'Make a gentle fist', "Thumb on the outside. Don't squeeze."); },
+  loop(){
+    clearInterval(this.tk);
+    this.tk = setInterval(() => {
+      if (current !== this) return clearInterval(this.tk);
+      const t = (performance.now() - this.since) / 1000;
+      if (this.state === 'flat' && this.pressed && performance.now() - this.pressAt > 1200) this.toFist();      // still pressing? count it anyway
+      if (this.state === 'fist'){ if (t > 2.2) countdown(5.2 - t, 3); if (t > 5.2){ this.done++; replays = 0; yay(); log('rep', {move:this.name, n:this.done});
+        if (this.done >= this.reps){ clearInterval(this.tk); cdOff(); idle(false); dots(this.reps, this.reps, 'All done'); log('done', {move:this.name}); return next('Beautiful. Open your hand slowly and let it rest.'); }
+        this.flat(); } }
+    }, 100);
+  },
+};
+$('do').addEventListener('pointerdown', () => FistStretch.press(true));
+addEventListener('pointerup', () => FistStretch.press(false));
+// presenter key: hold Space = hand on the screen; for Finger walk, Space completes the current finger
+addEventListener('keydown', e => { if (e.code !== 'Space' || e.repeat) return; e.preventDefault(); audio();
+  if (current === FistStretch) FistStretch.press(true); else if (current === FingerWalk && SVG.style.display === 'block' && FingerWalk.i < 4) FingerWalk.hit(); });
+addEventListener('keyup', e => { if (e.code === 'Space') FistStretch.press(false); });
+PLAN.push(FingerWalk, FistStretch);
+
+/* 6 · reward: the medal, the week, and her family */
+const FAMILY = [
+  {name:'Lily', rel:'Granddaughter', img:'photos/lily-1.jpg', msg:"Grandma! I'm wearing your pearl earrings to my first day at the new job. They're my good luck charm. I love you so much!"},
+  {name:'Sam', rel:'Grandson', img:'photos/sam-1.jpg', msg:"Grandma! I played piano at the school concert, the song you taught me. My fingers were nervous, but I did it!"},
+  {name:'Biscuit', rel:'Dog', img:'photos/biscuit-1.jpg', msg:"Woof! Biscuit stole a whole sock today and looked very proud. He misses your treats."},
+  {name:'Maya', rel:'Daughter', img:'photos/maya-1.jpg', msg:"Hi Mom! Coming Sunday with your lemon cake. So proud of you for doing your hand moves every morning."},
+  {name:'Mochi', rel:'Cat', img:'photos/mochi-1.jpg', msg:"Mochi slept on your favourite blanket all afternoon. Purr."},
+].filter(p => !PROFILE.family || PROFILE.family.includes(p.name));   // the people family chose in setup
+/* the ending closes the loop: her effort → her family sees it → her family answers */
+const SHARE_TO = FAMILY.find(p => p.rel === 'Daughter' || p.rel === 'Son') || FAMILY[0] || {name:'Maya', rel:'Daughter', img:'photos/maya-1.jpg'};
+const DEFAULT_REPLY = `So proud of you, Mom ❤️ I'll bring your lemon cake on Sunday.`, REST_REPLY = `Resting is good too, Mom ❤️ I'll bring your lemon cake on Sunday.`;
+let replyShown = false;
+function weekKey(d){ const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x.toDateString(); }
+function stopMoves(){ [FingerWalk, FistStretch].forEach(m => { clearTimeout(m.tw); clearTimeout(m.tr); clearInterval(m.tk); }); G.clear(); }
+function reward(early){
+  stopMoves(); close(); current = null; idle(false); mode('none'); tags(); dots(0); cdOff(); bar(false); show('pReward'); where('All done', 'Well done today');
+  const n = LOG.filter(l => l.what === 'done').length, chk = LOG.find(l => l.what === 'check-in'), spots = chk ? chk.spots : [];
+  const hurt = LOG.some(l => l.what === 'pain');
+  // her history (kept on the iPad): sessions this week, and sore spots last time
+  let hist = []; try { hist = JSON.parse(localStorage.getItem('rosie-history') || '[]'); } catch(e){}
+  if (!hist.length) hist = [{at: new Date(Date.now() - 4 * 864e5).toISOString(), spots: 3, example: true}];   // demo example of a previous session
+  const prev = hist[hist.length - 1];
+  hist.push({at: new Date().toISOString(), spots: spots.length, moves: n});
+  try { localStorage.setItem('rosie-history', JSON.stringify(hist.slice(-30))); } catch(e){}
+  const thisWeek = hist.filter(h => weekKey(h.at) === weekKey(Date.now())).length;
+  $('medalN').textContent = n; $('rwT').innerHTML = early ? `Thank you, <b>${NAME}.</b>` : `Lovely work, <b>${NAME}.</b>`;
+  $('rwSub').textContent = `${n} ${n === 1 ? 'move' : 'moves'} done · ${Math.min(thisWeek, 2)} of 2 this week`;
+  $('medalG').innerHTML = [...Array(10)].map((_, k) => `<ellipse cx="0" cy="-40" rx="19" ry="34" fill="${k % 2 ? '#ffe3f1' : '#fff'}" transform="rotate(${k * 36})"/>`).join('') + '<circle r="38" fill="#ffd43b"/><circle r="38" fill="none" stroke="#f4b400" stroke-width="3"/>';
+  // what her family sees
+  // only say what really happened
+  const lines = [n ? `✅ ${n} hand ${n === 1 ? 'move' : 'moves'} done` : '🌙 Rested today, no moves'];
+  if (chk) lines.push(spots.length ? `🌼 ${spots.slice(0, 2).join(', ')}${spots.length > 2 ? ` and ${spots.length - 2} more` : ''} a bit sore` : '🌼 No sore spots today');
+  if (hurt) lines.push('✋ Stopped once because it hurt');
+  else if (n && (gentle || early)) lines.push('🌸 Took it gently today');
+  else if (n >= PLAN.length) lines.push('💪 Full moves today');
+  if (chk && prev && spots.length < prev.spots) lines.push(`📉 Fewer sore spots than last time (${prev.spots} → ${spots.length})`);
+  $('shareL').innerHTML = lines.map(l => `<li>${l}</li>`).join('');
+  $('shareTo').textContent = `${SHARE_TO.name} got your update`; $('shareWho').textContent = SHARE_TO.name;
+  try { localStorage.setItem('rosie-share', JSON.stringify({name: NAME, to: SHARE_TO.name, moves: n, spots, gentle: gentle || hurt, at: new Date().toISOString()})); localStorage.removeItem('rosie-reply'); } catch(e){}
+  $('reply').classList.remove('on'); $('waiting').style.display = ''; $('waiting').firstChild.textContent = `Waiting for ${SHARE_TO.name}… `; replyShown = false;
+  $("petals").innerHTML = [...Array(0)].map(() => `<i style="left:${Math.random() * 100}%;font-size:${22 + Math.random() * 24}px;animation-duration:${3.5 + Math.random() * 3}s;animation-delay:${Math.random() * 2}s">${Math.random() < .6 ? '🌼' : '🌸'}</i>`).join('');
+  yay(); setTimeout(yay, 500); log('shared', {to: SHARE_TO.name});
+  say(`${early ? `Thank you, ${NAME}. Resting is part of it too.` : `You did it, ${NAME}! That's today's moves finished.`} I've sent your progress to ${SHARE_TO.name}.`,
+      early ? 'Resting is good too' : 'You did it!', `I've sent your progress to ${SHARE_TO.name}.`);
+  clearTimeout(reward.t); reward.t = setTimeout(() => showReply(n ? DEFAULT_REPLY : REST_REPLY), 9000);   // if nobody answers live, the family's saved reply arrives
+}
+function showReply(msg){
+  if (replyShown || !$('pReward').classList.contains('on')) return; replyShown = true; clearTimeout(reward.t);
+  $('waiting').style.display = 'none'; $('rImg').src = SHARE_TO.img || 'photos/maya-1.jpg'; $('rWho').textContent = `${SHARE_TO.name} replied`; $('rMsg').textContent = msg;
+  $('reply').classList.add('on'); [784, 988].forEach((f, k) => chime(f, k * .12, .08)); log('reply', {from: SHARE_TO.name});
+  setTimeout(() => say(`${SHARE_TO.name} says: ${msg.replace(/[❤️🍋🌼]/gu, '')}`, `${SHARE_TO.name} says…`, msg), 500);
+}
+// a live reply from the family's phone (notify.html, open in another window on the same Mac)
+addEventListener('storage', e => { if (e.key === 'rosie-reply' && e.newValue){ try { showReply(JSON.parse(e.newValue).msg); } catch(x){} } });
+$('reply').onclick = () => { $('vImg').src = SHARE_TO.img || 'photos/maya-1.jpg'; $('vWho').textContent = `${SHARE_TO.name} · ${SHARE_TO.rel}`; $('vMsg').textContent = $('rMsg').textContent; open('sView'); say(`${SHARE_TO.name} says: ${$('rMsg').textContent}`, `${SHARE_TO.name} says…`); };
+$('vDone').onclick = () => { close(); player.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel(); say('When you are ready, tap All done for today.', 'Tap All done', 'When you are ready.'); };
+/* reminder: twice a week by default (Tuesday + Friday mornings); she can change the days with one tap each */
+const DAYN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+let remDays = [1, 4]; try { const r = JSON.parse(localStorage.getItem('rosie-reminder') || 'null'); if (r && r.days && r.days.length) remDays = r.days; } catch(e){}
+function drawDays(){ $('days').innerHTML = DAYN.map((d, k) => `<button aria-pressed="${remDays.includes(k)}" data-k="${k}" aria-label="${d}">${d.slice(0, 2)}</button>`).join(''); }
+$('days').onclick = e => { const b = e.target.closest('button'); if (!b) return; const k = +b.dataset.k;
+  remDays = remDays.includes(k) ? remDays.filter(x => x !== k) : [...remDays, k].sort(); if (!remDays.length) remDays = [k]; drawDays(); chime(659);
+  say(`${remDays.map(x => DAYN[x]).join(' and ')} mornings.`, remDays.map(x => DAYN[x]).join(' & ')); };
+function nextDay(){ const today = (new Date().getDay() + 6) % 7; for (let i = 1; i <= 7; i++){ const k = (today + i) % 7; if (remDays.includes(k)) return DAYN[k]; } return DAYN[remDays[0]]; }
+const list = () => remDays.map(x => DAYN[x]).join(' and ');
+$('finish').onclick = () => { drawDays(); show('pRemind'); where('One last thing', 'Reminders'); $('remBtns').style.display = ''; $('days').style.display = ''; $('remBell').textContent = 'Reminders'; $('remT').innerHTML = 'Shall I <b>remind</b> you?';
+  $('remP').innerHTML = "Hand moves work best a little and often. I'll remind you <b>twice a week</b>, in the morning.";
+  say(`Shall I remind you? Hand moves work best a little and often. I'll remind you twice a week, on ${list()} mornings.`, 'Shall I remind you?', `Twice a week: ${list()} mornings.`); };
+function bye(on){
+  close(); where('', 'See you soon'); log('goodbye', {reminder: on ? remDays.map(x => DAYN[x]) : null});
+  $('remBtns').style.display = 'none'; $('days').style.display = 'none'; $('remBell').textContent = on ? 'Reminders on' : 'All done';
+  if (on){ $('remT').innerHTML = `See you on <b>${nextDay()}</b>, ${NAME}.`; $('remP').textContent = `I'll remind you on ${list()} mornings. You can put the iPad down now.`;
+    say(`Lovely. I'll remind you on ${list()} mornings. See you on ${nextDay()}, ${NAME}. You can put the iPad down now.`, `See you on ${nextDay()}!`, `Reminders: ${list()} mornings.`); }
+  else { $('remT').innerHTML = `See you <b>next time</b>, ${NAME}.`; $('remP').textContent = 'No reminders. You can put the iPad down now.';
+    say(`That's okay. See you next time, ${NAME}. You can put the iPad down now.`, 'See you next time!'); }
+}
+$('remYes').onclick = () => {
+  try { localStorage.setItem('rosie-reminder', JSON.stringify({days: remDays, time: '10:00'})); } catch(e){}
+  // the real iPad asks once ("Rosie would like to send you notifications"); on a laptop we just remember the choice
+  try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {}); } catch(e){}
+  yay(); bye(true);
+};
+$('remNo').onclick = () => bye(false);
+
+/* family area: press and hold the logo for 2 seconds (so she can't open it by accident) */
+let holdT; $('logo').addEventListener('pointerdown', () => { holdT = setTimeout(() => location.href = 'index.html', 2000); });
+['pointerup', 'pointerleave'].forEach(t => $('logo').addEventListener(t, () => clearTimeout(holdT)));
+
+window.__rosie = {FingerWalk, FistStretch, LOG, get current(){ return current; }, reward, checkin};
+</script>
+</body>
+</html>

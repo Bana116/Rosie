@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="voice.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rosie · Where does it hurt?</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1b1a22;--ink-2:#4a4858;--rosie:#ec3a93;--cobalt:#2f5bff;--sun:#ffd43b;--grass:#3ccb5f;
+    --soft:0 1px 2px rgba(20,30,80,.08),0 6px 18px rgba(20,30,80,.12);--soft-pink:0 2px 4px rgba(184,24,108,.18),0 10px 24px rgba(236,58,147,.32)}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{background:#dcd6cc;color:var(--ink);overflow:hidden;font-family:Nunito,ui-rounded,system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit;cursor:pointer;border:0}
+
+  #device{position:absolute;left:50%;top:50%;width:1216px;height:856px;padding:18px;border-radius:52px;background:linear-gradient(145deg,#2a2830,#111015);box-shadow:0 0 0 1.5px #3a3840,0 40px 90px rgba(0,0,0,.28)}
+  #screen{position:relative;width:1180px;height:820px;border-radius:34px;overflow:hidden;background:#f6ede6}
+  body.real{background:#f6ede6}
+  body.real #device{left:0;top:0;width:100vw;height:100vh;padding:0;border-radius:0;background:none;box-shadow:none;transform:none!important}
+  body.real #screen{width:100%;height:100%;border-radius:0}
+
+  #gl{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+  #gl:active{cursor:grabbing}
+
+  header{position:absolute;left:28px;right:28px;top:20px;height:56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;z-index:3;pointer-events:none}
+  header > *{pointer-events:auto}
+  .logo{height:46px;justify-self:center;filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
+  .eyebrow{justify-self:end;font-size:15px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#6b5a66}
+  .back{justify-self:start;height:48px;padding:0 20px;border-radius:999px;background:#fff;font-size:17px;font-weight:800;box-shadow:var(--soft)}
+
+  /* inside the daily app: same header, bubble and Rosie positions as every other screen, so nothing jumps */
+  body.emb header{left:36px;right:36px;top:26px;height:68px}
+  body.emb .back{display:none}
+  .again{display:none}
+  body.emb .again{display:inline-flex;grid-column:3;grid-row:1;justify-self:end;align-items:center;gap:10px;height:68px;padding:0 28px;border-radius:999px;font-size:23px;font-weight:800;background:#2b1f2a;color:#fff}
+  body.emb .again svg{width:26px;height:26px}
+  body.emb .logo{grid-column:1;grid-row:1;justify-self:start;height:50px;filter:none}
+  body.emb .eyebrow{grid-column:2;grid-row:1;justify-self:center;text-align:center;font-size:24px;letter-spacing:0;text-transform:none;color:#2b1f2a;opacity:1}
+  body.emb .eyebrow small{display:block;font-size:15px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:#6b5a66}
+  body.emb .bubble{left:40px;top:122px;width:340px;padding:22px 24px}
+  body.emb #msg{font-size:31px;line-height:1.14}
+  body.emb #sub{font-size:20px;line-height:1.4;color:#6b5a66}
+  body.emb #rosieWrap{left:62px;bottom:190px}
+  body.emb #rosieShadow{left:84px;bottom:176px;width:186px;height:22px}
+  /* Rosie floats bottom-left, her bubble above */
+  .bubble{position:absolute;left:36px;top:108px;width:330px;background:#fff;border-radius:30px;padding:20px 22px;z-index:2;box-shadow:var(--soft)}
+  .bubble::after{content:"";position:absolute;left:58px;bottom:-22px;width:38px;height:26px;background:#fff;clip-path:polygon(0 0,100% 0,18% 100%)}
+  #msg{font-size:30px;font-weight:900;line-height:1.12;letter-spacing:-.01em}
+  #sub{margin-top:8px;font-size:18px;font-weight:700;color:var(--ink-2);line-height:1.35}
+  #rosieWrap{position:absolute;left:40px;bottom:150px;width:230px;height:230px;z-index:2;animation:float 4.6s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-12px)}}
+  #rosieShadow{position:absolute;left:58px;bottom:112px;width:194px;height:26px;border-radius:50%;background:#2b1f2a;opacity:.14;filter:blur(8px);z-index:1;animation:shadow 4.6s ease-in-out infinite}
+  @keyframes shadow{50%{transform:scale(.86);opacity:.22}}
+  #rosie{width:100%;height:100%;overflow:visible}
+  body.talking #mouthO{opacity:1}body.talking #mouthC{opacity:0}
+
+  /* answers: flower chips along the bottom */
+  #spots{position:absolute;left:300px;right:330px;bottom:34px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;z-index:2}
+  .spot{display:flex;align-items:center;gap:8px;height:46px;padding:0 16px 0 8px;border-radius:999px;background:#fff;color:#2b1f2a;font-size:18px;font-weight:800;
+    animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+  .spot i{width:30px;height:30px;border-radius:50%;background:#fff1c2;display:grid;place-items:center;font-style:normal;font-size:18px}
+  @keyframes pop{from{transform:scale(.4);opacity:0}}
+
+  .actions{position:absolute;right:28px;bottom:28px;display:flex;flex-direction:column;gap:12px;z-index:2;width:300px}
+  .actions button{height:64px;border-radius:999px;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s}
+  .actions button:active{transform:scale(.96)}
+  /* Turn sits beside the hand it turns: a round button with a word under it */
+  #turn{position:fixed;left:auto;background:#fff;box-shadow:var(--soft)}
+  .actions #turn{display:none}
+  #turnB{position:absolute;left:calc(50% + 300px);top:46%;transform:translateY(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;background:none;font-size:18px;font-weight:800;color:#2b1f2a}
+  #turnB i{width:76px;height:76px;border-radius:50%;background:#fff;box-shadow:var(--soft);display:grid;place-items:center}
+  #turnB svg{width:32px;height:32px}
+  #turn svg{width:26px;height:26px}
+  #done{background:var(--rosie);color:#fff;box-shadow:var(--soft-pink);height:76px!important;font-size:23px!important}
+  #none{height:58px!important;font-size:19px!important;font-weight:800!important;background:#efe2d8;color:#2b1f2a}
+
+  #hint{position:absolute;left:50%;top:92px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;
+    background:#fff;color:#6b5a66;font-size:18px;font-weight:800;z-index:2;transition:opacity .6s}
+  #hint svg{width:24px;height:24px}
+
+  #thanks{position:absolute;inset:0;z-index:5;display:none;place-items:center;background:rgba(246,237,230,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  #thanks.on{display:grid}
+  /* same editorial card as the rest of Rosie: one left edge, small label, light + bold headline */
+  .card{width:600px;background:#fff;border-radius:36px;padding:40px 44px;box-shadow:var(--soft);text-align:left;animation:pop .5s cubic-bezier(.3,1.4,.5,1)}
+  .card .label{display:inline-block;background:#f6ede6;border-radius:999px;padding:8px 16px;font-size:15px;font-weight:800;color:#6b5a66;margin-bottom:20px}
+  .card h2{font-size:46px;font-weight:600;letter-spacing:-.025em;line-height:1.05;color:#2b1f2a}.card h2 b{font-weight:900}
+  .card p{margin-top:14px;font-size:21px;font-weight:600;color:#6b5a66;line-height:1.45}.card p b{color:#2b1f2a;font-weight:800}
+  .card ul{list-style:none;padding:0;margin:22px 0 0;display:grid;gap:10px}
+  .card li{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;color:#2b1f2a}
+  .card li::before{content:"";width:12px;height:12px;border-radius:50%;background:#d62f86;flex:none}
+  .card button{margin-top:30px;height:72px;padding:0 44px;border-radius:999px;background:#d62f86;color:#fff;font-size:23px;font-weight:900;box-shadow:0 10px 26px rgba(214,47,134,.3)}
+</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+</head>
+<body>
+<div id="device"><div id="screen">
+  <canvas id="gl" aria-label="A 3D hand. Drag to turn it. Tap where it hurts."></canvas>
+
+  <header>
+    <button class="back" id="backP">‹ Back</button>
+    <img class="logo" src="vendor/rosie-logo.png" alt="Rosie" style="filter:none">
+    <span class="eyebrow">Hand check-in</span>
+    <button class="again" id="againP"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Say it again</button>
+  </header>
+
+
+  <div class="bubble"><div id="msg">Where does it hurt the most?</div><div id="sub">Tap a pink dot where it hurts. A little flower will grow there.</div></div>
+  <div id="rosieShadow"></div>
+  <div id="rosieWrap"><svg id="rosie" viewBox="0 0 100 100" aria-hidden="true"></svg></div>
+
+  <div id="spots" aria-live="polite"></div>
+
+  <button id="turnB" aria-label="Turn the hand"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2"/><path d="M19 2v4h-4"/><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M5 22v-4h4"/></svg></i>Turn</button>
+  <div class="actions">
+    <button id="turn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2"/><path d="M19 2v4h-4"/><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M5 22v-4h4"/></svg>Turn hand</button>
+    <button id="done">Nothing hurts today</button>
+  </div>
+
+  <div id="thanks"><div class="card"><span class="label" id="tLabel">Check-in done</span><h2 id="tTitle">Thank you</h2><p id="tText"></p><ul id="tList"></ul><button id="tGo">Start my moves</button></div></div>
+</div></div>
+
+<script type="module">
+const WHO = new URLSearchParams(location.search).get('call') || 'Margaret';
+import * as THREE from 'three';
+import { OrbitControls } from './vendor/OrbitControls.js';
+import { RoundedBoxGeometry } from './vendor/RoundedBoxGeometry.js';
+const $ = id => document.getElementById(id);
+
+/* ── fit the iPad frame / go full-screen on a real iPad ── */
+const real = window.parent !== window || (matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) >= 740);   // inside the app: fill its screen, no second frame
+if (real) document.body.classList.add('real');
+function fit(){ if (real) return; const s = Math.min((innerWidth - 40) / 1216, (innerHeight - 40) / 856, 1);
+  $('device').style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', () => { fit(); size(); }); fit();
+
+/* ── Rosie (same scalloped shape as the app) ── */
+{ let d = ''; for (let i = 0; i <= 360; i++){ const t = i / 360 * Math.PI * 2 - Math.PI / 2, r = 46 + 2.4 * Math.pow(Math.abs(Math.cos(t * 12)), .7);
+    d += (i ? 'L' : 'M') + (50 + r * Math.cos(t)).toFixed(2) + ',' + (50 + r * Math.sin(t)).toFixed(2); }
+  $('rosie').innerHTML = `<defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e424a8"/><stop offset=".45" stop-color="#ec3a93"/><stop offset="1" stop-color="#fb6070"/></linearGradient>
+    <linearGradient id="fr" x1=".15" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+    <path d="${d}Z" fill="url(#rg)"/><path d="${d}Z" fill="none" stroke="url(#fr)" stroke-width="2.2" opacity=".55" style="filter:blur(.8px)"/>
+    <ellipse cx="40" cy="38" rx="3.9" ry="3.4" fill="#111"/><ellipse cx="60.5" cy="38" rx="3.9" ry="3.4" fill="#111"/>
+    <path id="mouthC" d="M36.5 58 C40.5 64 46 67 51 66.8 C57 66.6 60.5 62.5 64 58" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" style="transition:opacity .15s"/>
+    <ellipse id="mouthO" cx="50.5" cy="62" rx="7" ry="5.5" fill="#111" opacity="0" style="transition:opacity .15s"/>`; }
+
+/* ── voice: ElevenLabs through server.py if it's running, otherwise the built-in voice ── */
+let audioEl = new Audio(), talkT;
+function talking(on){ clearInterval(talkT); document.body.classList.toggle('talking', false); if (on){ let k = 0; talkT = setInterval(() => document.body.classList.toggle('talking', k++ % 2 === 0), 200); } }
+let lastText = 'Where does it hurt the most? Tap a pink dot where it hurts, and a little flower will grow there.';
+async function say(text){ lastText = text;
+  try {
+    const r = await fetch('/tts', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text, voice:'Sarah'})});
+    if (!r.ok) throw 0;
+    audioEl.pause(); audioEl.src = URL.createObjectURL(await r.blob());
+    audioEl.onplay = () => talking(true); audioEl.onended = audioEl.onerror = () => talking(false);
+    await audioEl.play(); return;
+  } catch(e){}
+  if ('speechSynthesis' in window){ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = .9;
+    u.onstart = () => talking(true); u.onend = () => talking(false); speechSynthesis.speak(u); }
+}
+function bubble(main, sub = ''){ $('msg').textContent = main; $('sub').textContent = sub; $('sub').style.display = sub ? '' : 'none'; }
+
+/* ═════════════ the 3D scene ═════════════ */
+const canvas = $('gl');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, .1, 100);
+camera.position.set(0, .5, 11);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, .5, 0);
+controls.enableZoom = false; controls.enablePan = false; controls.enableDamping = true; controls.dampingFactor = .08;
+controls.rotateSpeed = .7; controls.minPolarAngle = Math.PI / 2 - .55; controls.maxPolarAngle = Math.PI / 2 + .45;
+controls.autoRotate = false;   // no spinning: a gentle sway (in the loop) keeps the palm facing her
+function size(){ const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+size();
+
+// soft studio light, a little purple bounce like your reference
+scene.add(new THREE.HemisphereLight(0xfff4ec, 0xd9c2b4, 1.3));
+const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(3.5, 5, 6); key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024); key.shadow.radius = 6; Object.assign(key.shadow.camera, {left:-4, right:4, top:4, bottom:-4}); scene.add(key);
+const rim = new THREE.DirectionalLight(0xffd2e4, 1.8); rim.position.set(-4, 3, -6); scene.add(rim);
+const back = new THREE.DirectionalLight(0xffffff, 1.1); back.position.set(3, 1, -6); scene.add(back);
+const fill = new THREE.DirectionalLight(0xffe0ec, .6); fill.position.set(-4, -2, 4); scene.add(fill);
+
+// plush pink skin, like a soft vinyl toy
+const skin = new THREE.MeshStandardMaterial({color:0xf3d9c8, roughness:.9});   // soft matte clay
+const DOT = new THREE.MeshStandardMaterial({color:0xd62f86, roughness:.4, emissive:0xd62f86, emissiveIntensity:.25});
+const dots = [];   // a pink dot on every joint: the thing to tap
+
+/* a chunky toy hand: right hand, palm toward the camera, thumb on the right */
+const hand = new THREE.Group(); hand.scale.setScalar(.86); hand.position.y = -.05; scene.add(hand);
+const parts = [], landmarks = [];
+function mesh(geo, name){ const m = new THREE.Mesh(geo, skin); m.castShadow = true; m.receiveShadow = true; m.userData.region = name; parts.push(m); return m; }
+function mark(parent, x, y, z, name){ const o = new THREE.Object3D(); o.position.set(x, y, z); parent.add(o); landmarks.push({obj:o, name});
+  if (name !== 'Wrist' && !/fingertip/.test(name)){ const d = new THREE.Mesh(new THREE.SphereGeometry(.13, 24, 16), DOT); d.userData.label = name; o.add(d); dots.push(d);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.17, .21, 32), new THREE.MeshBasicMaterial({color:0xd62f86, transparent:true, opacity:.35})); ring.position.z = .02; o.add(ring); } }
+
+// puffy palm: a soft rounded pad, a little thicker in the middle
+const palm = mesh(new RoundedBoxGeometry(2.25, 2.15, 1.05, 10, .7), 'palm'); palm.position.set(0, .1, 0); hand.add(palm);
+// short wrist, rounded off (no sleeve)
+// the wrist flares smoothly up into the palm (a lathe profile), then rounds off at the bottom
+const prof = [];
+for (let i = 0; i <= 24; i++){ const t = i / 24, y = -2.05 + t * 1.55;
+  const r = t < .12 ? .8 * Math.sin(t / .12 * Math.PI / 2) : .8 + .16 * Math.pow(Math.max(0, (t - .5) / .5), 2);
+  prof.push(new THREE.Vector2(Math.max(.001, r), y)); }
+const wrist = mesh(new THREE.LatheGeometry(prof, 64), 'wrist'); wrist.scale.z = .56; hand.add(wrist);
+mark(hand, 0, -1.3, .45, 'Wrist');
+
+// fat, rounded fingers: two smooth sections each (no ring-like knuckles), slightly fanned
+const FINGERS = [ // name, base x, base y, fan (rad), radius, [lower, upper]
+  ['Pointer finger', .78, 1.02, -.13, .3, [.72, .62]],
+  ['Middle finger', .27, 1.12, -.03, .31, [.82, .66]],
+  ['Ring finger', -.25, 1.07, .07, .3, [.74, .6]],
+  ['Little finger', -.74, .9, .2, .26, [.56, .5]],
+];
+function digit(name, x, y, z, rotZ, rotX, r, lens, names){
+  const root = new THREE.Group(); root.position.set(x, y, z); root.rotation.z = rotZ; root.rotation.x = rotX; hand.add(root);
+  mark(root, 0, 0, r * .9, `${name}, ${names[0]}`);
+  let cur = root;
+  lens.forEach((len, i) => {
+    const seg = new THREE.Group(); seg.rotation.x = i ? .2 : .04; cur.add(seg);     // soft curl toward the palm
+    const joint = mesh(new THREE.SphereGeometry(r, 32, 24), name); seg.add(joint);  // same radius = seamless bend
+    const bone = mesh(new THREE.CapsuleGeometry(r, len, 12, 28), name); bone.position.y = len / 2; seg.add(bone);
+    const next = new THREE.Group(); next.position.y = len; seg.add(next); cur = next;
+    if (i < lens.length - 1) mark(next, 0, 0, r * .9, `${name}, ${names[i + 1]}`);
+  });
+  mark(cur, 0, r * .6, r * .4, `${name}, fingertip`);
+}
+FINGERS.forEach(([n, x, y, s, r, lens]) => digit(n, x, y, 0, s, 0, r, lens, ['base knuckle', 'middle knuckle']));
+// thumb: short and chunky, from the side of the palm, angled up and forward
+digit('Thumb', .98, -.2, .22, -.82, .38, .33, [.56, .5], ['base, near the wrist', 'knuckle']);
+
+// soft contact shadow under the hand
+const shadowMat = new THREE.ShadowMaterial({opacity:.22});
+const ground = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), shadowMat); ground.rotation.x = -Math.PI / 2; ground.position.y = -1.95; ground.receiveShadow = true; scene.add(ground);
+
+/* ── flowers: a little 3D daisy that blooms on the sore spot ── */
+const PETAL = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.45});
+const PETAL_ALT = [0xffffff, 0xfff3b0, 0xffe0f0];
+const CENTER = new THREE.MeshStandardMaterial({color:0xffc928, roughness:.35, emissive:0x3a2600, emissiveIntensity:.15});
+const petalGeo = new THREE.SphereGeometry(.12, 20, 14), centerGeo = new THREE.SphereGeometry(.09, 24, 16);
+function makeFlower(i){
+  const f = new THREE.Group(), mat = PETAL.clone(); mat.color.setHex(PETAL_ALT[i % PETAL_ALT.length]);
+  for (let k = 0; k < 6; k++){ const p = new THREE.Mesh(petalGeo, mat); const a = k / 6 * Math.PI * 2;
+    p.scale.set(1, .44, .3); p.position.set(Math.cos(a) * .145, Math.sin(a) * .145, 0); p.rotation.z = a; p.castShadow = true; f.add(p); }
+  const c = new THREE.Mesh(centerGeo, CENTER); c.scale.z = .7; c.position.z = .03; f.add(c);
+  f.userData.flower = true; f.traverse(o => o.userData.flowerRoot = f);
+  return f;
+}
+const flowers = [];   // {group, name}
+const Z = new THREE.Vector3(0, 0, 1);
+function bloom(point, normal, name){
+  const f = makeFlower(flowers.length);
+  const local = hand.worldToLocal(point.clone());
+  const nLocal = normal.clone().transformDirection(hand.matrixWorld.clone().invert()).normalize();
+  f.position.copy(local).addScaledVector(nLocal, .045);
+  f.quaternion.setFromUnitVectors(Z, nLocal);
+  f.rotateZ(Math.random() * Math.PI);
+  f.scale.setScalar(.01); hand.add(f);
+  const t0 = performance.now();
+  (function grow(now){ const k = Math.min(1, (now - t0) / 650), e = 1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2);
+    f.scale.setScalar(Math.max(.01, e * 1.15)); if (k < 1) requestAnimationFrame(grow); })(t0);
+  flowers.push({group:f, name}); drawSpots(); chime(660 + flowers.length * 60);
+}
+function unbloom(f){
+  const i = flowers.findIndex(x => x.group === f); if (i < 0) return;
+  const t0 = performance.now();
+  (function shrink(now){ const k = Math.min(1, (now - t0) / 260); f.scale.setScalar(1.15 * (1 - k) + .01); if (k < 1) requestAnimationFrame(shrink); else hand.remove(f); })(t0);
+  flowers.splice(i, 1); drawSpots(); chime(392);
+}
+function drawSpots(){
+  $('spots').innerHTML = [...new Set(flowers.map(f => f.name))].map(n => `<span class="spot"><i>🌼</i>${n}</span>`).join('');
+  $('done').textContent = flowers.length ? "That's all" : 'Nothing hurts today';
+}
+
+/* ── a soft chime ── */
+let ac;
+function chime(freq){ try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+  o.frequency.value = freq; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.08, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + 1.2);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 1.3); } catch(e){} }
+
+/* ── tap vs drag: a quick, still touch is a tap ── */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let down = null;
+canvas.addEventListener('pointerdown', e => { down = {x:e.clientX, y:e.clientY, t:performance.now()}; stopAuto(); });
+canvas.addEventListener('pointerup', e => {
+  if (!down) return; const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
+  if (moved > 12 || dt > 600) return;
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  // tapping a flower removes it
+  const fh = ray.intersectObjects(flowers.map(f => f.group), true)[0];
+  if (fh){ const root = fh.object.userData.flowerRoot; const n = flowers.find(f => f.group === root)?.name;
+    unbloom(root); bubble('Okay, removed.', n ? `No more flower on the ${n.toLowerCase()}.` : ''); return; }
+  const dh = ray.intersectObjects(dots, false)[0];
+  const hit = dh || ray.intersectObjects(parts, false)[0]; if (!hit) return;
+  const normal = dh ? new THREE.Vector3(0, 0, 1).transformDirection(hit.object.matrixWorld).normalize() : hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
+  const name = dh ? dh.object.userData.label : labelFor(hit.point, hit.object, normal);
+  bloom(hit.point, normal, name);
+  const short = name.split(',')[0];
+  bubble(name, flowers.length === 1 ? 'Got it. Anywhere else? Tap another spot, or press "That\'s all".' : 'Got it. Anywhere else?');
+  say(flowers.length === 1 ? `${name}. Got it. Is there anywhere else that hurts?` : `${name}. Got it.`);
+});
+// the nearest named joint wins, so labels are precise; otherwise the broad area
+const tmp = new THREE.Vector3();
+function labelFor(p, obj, n){
+  let best = null, bd = .42;
+  landmarks.forEach(l => { l.obj.getWorldPosition(tmp); const d = tmp.distanceTo(p); if (d < bd){ bd = d; best = l.name; } });
+  if (best) return best;
+  if (obj.userData.region === 'palm'){ const facing = n.clone().transformDirection(hand.matrixWorld.clone().invert()); return facing.z >= 0 ? 'Palm' : 'Back of the hand'; }
+  if (obj.userData.region === 'wrist') return 'Wrist';
+  return obj.userData.region;
+}
+
+/* ── turning ── */
+let autoStopped = false;
+function stopAuto(){ if (!autoStopped){ autoStopped = true; controls.autoRotate = false; } }   // freeze where it is, so her tap lands where she aimed
+controls.addEventListener('start', stopAuto);
+let turning = null;
+$('turn').onclick = () => {
+  stopAuto(); const from = controls.getAzimuthalAngle(), to = from + Math.PI, t0 = performance.now();
+  const r = camera.position.clone().sub(controls.target), rad = Math.hypot(r.x, r.z), y = r.y;
+  turning = now => { const k = Math.min(1, (now - t0) / 900), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, a = from + (to - from) * e;
+    camera.position.set(controls.target.x + rad * Math.sin(a), controls.target.y + y, controls.target.z + rad * Math.cos(a)); if (k >= 1) turning = null; };
+  const back = Math.cos(to) < 0;
+  bubble(back ? 'This is the back of your hand' : 'This is your palm', 'Tap anywhere that hurts.');
+};
+
+/* ── finishing ── */
+function finish(){
+  const names = [...new Set(flowers.map(f => f.name))];
+  $('tList').innerHTML = names.map(n => `<li>${n}</li>`).join('');
+  if (names.length){
+    $('tText').innerHTML = `Noted. <b>Today's moves will be slower and easier</b> on your hand. Your family will see this too.`;
+    say(`Thank you, ${WHO}. Today's moves will be slower and easier on your hand.`);
+  } else {
+    $('tText').innerHTML = "Wonderful. <b>No sore spots today.</b> Let's do your moves.";
+    say("Wonderful. No sore spots today. Let's do your moves.");
+  }
+  try { localStorage.setItem('rosie-pain', JSON.stringify({at: new Date().toISOString(), spots: names})); } catch(e){}
+  console.table(names);
+  $('tTitle').innerHTML = `Thank you, <b>${WHO}.</b>`; $('tLabel').textContent = names.length ? `${names.length} sore ${names.length === 1 ? 'spot' : 'spots'} noted` : 'Check-in done'; $('thanks').classList.add('on');
+}
+$('done').onclick = finish;   // one button: 'Nothing hurts today' until she taps a spot, then 'That's all'
+$('turnB').onclick = () => $('turn').click();
+const EMB = window.parent !== window;
+if (EMB){ $('againP').onclick = () => say(lastText); document.body.classList.add('emb'); document.querySelector('.eyebrow').innerHTML = '<small>Step 1 of 3</small>Hand check-in'; }
+if (EMB) $('backP').style.visibility = 'hidden';   // inside the daily app: Skip / That's all are the ways on
+$('tGo').onclick = () => EMB ? parent.postMessage({rosiePain: flowers.map(f => f.name)}, '*') : location.href = './';
+$('backP').onclick = () => EMB ? parent.postMessage({rosiePainBack: 1}, '*') : location.href = './';
+
+/* ── loop ── */
+let frames = 0;
+(function loop(now){ if (++frames === 3 && EMB) parent.postMessage({rosieReady: 1}, '*');   // drawn: the app can fade us in
+  if (turning) turning(now); if (!autoStopped) hand.rotation.y = Math.sin(now / 1400) * .32; controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })(performance.now());
+
+// welcome
+drawSpots();
+addEventListener('pointerdown', function once(){ removeEventListener('pointerdown', once); say('Where does it hurt the most? Tap that spot on the hand, and a little flower will grow there.'); }, {once:true});
+window.__rosie = {hand, camera, controls, parts, flowers, landmarks, bloom, labelFor};
+</script>
+</body>
+</html>
