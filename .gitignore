@@ -1,0 +1,13 @@
+# local only
+*.zip
+*-v1.html
+*-pre-*.html
+zi*
+notes/
+.DS_Store
+# design scratch files
+explore.html
+finger.html
+exercises.html
+# never commit secrets
+.env
